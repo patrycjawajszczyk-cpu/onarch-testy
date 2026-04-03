@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testy wiedzy | ON-ARCH Akademia</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wine: #8B3A3A; --wine-dark: #6b2c2c; --wine-light: #f5eaea;
+    --bg: #f7f5f2; --white: #fff; --text: #1a1a1a; --muted: #888;
+    --border: #e0d8d0; --success: #2e7d32; --success-bg: #f1f8f1;
+    --error: #c62828; --error-bg: #fdf1f1;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Jost',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .header { background:var(--white); border-bottom:1px solid var(--border); padding:18px 40px; display:flex; align-items:center; gap:20px; position:sticky; top:0; z-index:100; }
+  .header-logo { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; color:var(--wine); }
+  .header-title { font-size:13px; color:var(--muted); }
+  .header-progress { margin-left:auto; display:flex; align-items:center; gap:12px; }
+  .progress-bar { width:180px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--wine); border-radius:2px; transition:width .4s; }
+  .progress-text { font-size:12px; color:var(--muted); min-width:55px; text-align:right; }
+
+  /* COURSE SELECT */
+  .select-screen { max-width:720px; margin:70px auto; padding:0 24px; }
+  .badge { display:inline-block; background:var(--wine-light); color:var(--wine); font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; padding:6px 14px; border-radius:20px; margin-bottom:24px; }
+  .select-title { font-family:'Cormorant Garamond',serif; font-size:44px; font-weight:400; line-height:1.1; margin-bottom:12px; }
+  .select-sub { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:40px; }
+  .course-cards { display:grid; gap:16px; margin-bottom:32px; }
+  .course-card { background:var(--white); border:2px solid var(--border); border-radius:14px; padding:28px; cursor:pointer; transition:all .2s; }
+  .course-card:hover { border-color:var(--wine); }
+  .course-card.selected { border-color:var(--wine); background:var(--wine-light); }
+  .cc-top { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .cc-num { width:36px; height:36px; border-radius:50%; background:var(--wine); color:white; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cc-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; }
+  .cc-code { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-left:auto; }
+  .cc-meta { display:flex; gap:20px; }
+  .cc-meta-item { font-size:12px; color:var(--muted); }
+  .cc-meta-item span { color:var(--wine); font-weight:600; }
+
+  .start-form { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:28px; margin-bottom:20px; }
+  .form-label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; display:block; }
+  .form-input { width:100%; padding:12px 16px; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; outline:none; transition:border-color .2s; margin-bottom:16px; }
+  .form-input:last-child { margin-bottom:0; }
+  .form-input:focus { border-color:var(--wine); }
+  .btn-start { width:100%; padding:16px; background:var(--wine); color:white; border:none; border-radius:10px; font-family:'Jost',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:background .2s; }
+  .btn-start:hover { background:var(--wine-dark); }
+
+  /* QUIZ */
+  .quiz-screen { display:none; max-width:760px; margin:0 auto; padding:40px 24px 80px; }
+  .section-header { margin-bottom:28px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+  .section-label { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--wine); margin-bottom:6px; }
+  .section-name { font-family:'Cormorant Garamond',serif; font-size:30px; }
+  .section-desc { font-size:13px; color:var(--muted); margin-top:5px; }
+  .question-block { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:14px; }
+  .question-block.answered { border-color:#d4c8c0; }
+  .question-num { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .question-text { font-size:15px; font-weight:500; line-height:1.5; margin-bottom:18px; }
+  .options { display:grid; gap:8px; }
+  .option { display:flex; align-items:flex-start; gap:10px; padding:11px 14px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all .15s; }
+  .option:hover { border-color:var(--wine); background:var(--wine-light); }
+  .option.selected { border-color:var(--wine); background:var(--wine-light); }
+  .option input { display:none; }
+  .option-dot { width:16px; height:16px; border:2px solid var(--border); border-radius:50%; flex-shrink:0; margin-top:2px; transition:all .15s; }
+  .option.selected .option-dot { border-color:var(--wine); background:var(--wine); }
+  .option-text { font-size:14px; line-height:1.5; }
+  .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-top:28px; }
+  .btn-nav { padding:12px 26px; border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; border:none; }
+  .btn-prev { background:var(--white); border:1.5px solid var(--border); color:var(--text); }
+  .btn-prev:hover { border-color:var(--wine); color:var(--wine); }
+  .btn-next { background:var(--wine); color:white; }
+  .btn-next:hover { background:var(--wine-dark); }
+
+  /* RESULTS */
+  .results-screen { display:none; max-width:680px; margin:0 auto; padding:60px 24px; }
+  .result-hero { text-align:center; margin-bottom:40px; }
+  .result-ring { width:130px; height:130px; border-radius:50%; margin:0 auto 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .result-ring.pass { background:var(--success-bg); border:3px solid var(--success); }
+  .result-ring.fail { background:var(--error-bg); border:3px solid var(--error); }
+  .result-pct { font-family:'Cormorant Garamond',serif; font-size:44px; font-weight:600; }
+  .result-pct.pass { color:var(--success); }
+  .result-pct.fail { color:var(--error); }
+  .result-status { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .result-status.pass { color:var(--success); }
+  .result-status.fail { color:var(--error); }
+  .result-title { font-family:'Cormorant Garamond',serif; font-size:34px; margin-bottom:8px; }
+  .result-sub { font-size:14px; color:var(--muted); line-height:1.6; }
+  .result-sections { display:grid; gap:10px; margin-bottom:32px; }
+  .rsc { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:18px 22px; display:flex; align-items:center; gap:14px; }
+  .rsc-label { flex:1; font-size:13px; font-weight:500; }
+  .rsc-bar-wrap { width:100px; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .rsc-bar { height:100%; border-radius:3px; }
+  .rsc-bar.pass { background:var(--success); }
+  .rsc-bar.fail { background:var(--error); }
+  .rsc-pct { font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:600; min-width:48px; text-align:right; }
+  .rsc-pct.pass { color:var(--success); }
+  .rsc-pct.fail { color:var(--error); }
+  .result-meta { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:22px; margin-bottom:28px; }
+  .meta-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .meta-row:last-child { border-bottom:none; }
+  .meta-label { color:var(--muted); }
+  .meta-value { font-weight:500; }
+  .btn-print { width:100%; padding:15px; background:var(--wine); color:white; border:none; border-radius:10px; font-family:'Jost',sans-serif; font-size:15px; font-weight:500; cursor:pointer; }
+  .saving-msg { text-align:center; padding:40px; font-size:14px; color:var(--muted); }
+
+  @media print {
+    .header,.btn-print { display:none!important; }
+    .results-screen { display:block!important; padding:0; }
+    body { background:white; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">ON-ARCH</div>
+  <div class="header-title" id="headerTitle">Testy wiedzy</div>
+  <div class="header-progress" id="headerProgress" style="display:none">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 0</div>
+  </div>
+</div>
+
+<div class="select-screen" id="selectScreen">
+  <div class="badge">ON-ARCH Akademia</div>
+  <h1 class="select-title">Testy wiedzy</h1>
+  <p class="select-sub">Wybierz kurs, wpisz dane i rozpocznij test. Wynik jest generowany i zapisywany automatycznie. Próg zaliczenia to 60% w każdej części.</p>
+
+  <div class="course-cards">
+    <div class="course-card" onclick="selectCourse('PW')">
+      <div class="cc-top">
+        <div class="cc-num">PW</div>
+        <div class="cc-name">Projektowanie Wnętrz</div>
+        <div class="cc-code">Interior Design Course</div>
+      </div>
+      <div class="cc-meta">
+        <div class="cc-meta-item"><span>45</span> pytań</div>
+        <div class="cc-meta-item"><span>3</span> części</div>
+        <div class="cc-meta-item">Teoria · Rysunek · SketchUp/V-Ray</div>
+      </div>
+    </div>
+    <div class="course-card" onclick="selectCourse('RAP')">
+      <div class="cc-top">
+        <div class="cc-num">RAP</div>
+        <div class="cc-name">Roczna Akademia Projektowania</div>
+        <div class="cc-code">One-Year Interior Design Academy</div>
+      </div>
+      <div class="cc-meta">
+        <div class="cc-meta-item"><span>75</span> pytań</div>
+        <div class="cc-meta-item"><span>5</span> części</div>
+        <div class="cc-meta-item">Teoria · Meblarstwo · Rysunek · SketchUp · AutoCAD</div>
+      </div>
+    </div>
+    <div class="course-card" onclick="selectCourse('PO')">
+      <div class="cc-top">
+        <div class="cc-num">PO</div>
+        <div class="cc-name">Projektowanie Ogrodów</div>
+        <div class="cc-code">Garden Design Course</div>
+      </div>
+      <div class="cc-meta">
+        <div class="cc-meta-item"><span>45</span> pytań</div>
+        <div class="cc-meta-item"><span>3</span> części</div>
+        <div class="cc-meta-item">Teoria · Rysunek odręczny · Vectorworks</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="start-form">
+    <label class="form-label">Imię i nazwisko</label>
+    <input type="text" class="form-input" id="uczestnikImie" placeholder="np. Jan Kowalski">
+    <label class="form-label">Adres e-mail</label>
+    <input type="email" class="form-input" id="uczestnikEmail" placeholder="np. jan.kowalski@email.pl">
+  </div>
+  <button class="btn-start" onclick="startTest()">Rozpocznij test</button>
+</div>
+
+<div class="quiz-screen" id="quizScreen"></div>
+<div class="results-screen" id="resultsScreen"></div>
+
+<script>
+const SUPABASE_URL = 'https://ifwgpyajezqholhaofab.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlmd2dweWFqZXpxaG9saGFvZmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MzI2MTQsImV4cCI6MjA4OTMwODYxNH0.r_ApzDBVuLA_I9vvBaGmBEC67VO950yhMeW_kiAs9To';
+
+const COURSES = {
+  PW: {
+    name: 'Projektowanie Wnętrz',
+    nameEn: 'Interior Design Course',
+    sections: [
+      { name:'Teoria projektowania wnętrz', desc:'Style, kolor, oświetlenie, ergonomia, materiały', questions:[
+        {q:'Który styl cechuje odsłonięta cegła, beton i metalowe elementy?',opts:['Skandynawski','Loftowy i industrialny','Prowansalski','Glamour'],ans:1},
+        {q:'Kolory dopełniające (komplementarne) to kolory:',opts:['Sąsiadujące na kole kolorów','Leżące naprzeciwko siebie na kole kolorów','Odcienie jednego koloru','Tworzące trójkąt na kole kolorów'],ans:1},
+        {q:'Temperatura barwowa mierzona jest w:',opts:['Lumenach','Luksach','Kelwinach','Watach'],ans:2},
+        {q:'Trójkąt roboczy w kuchni łączy:',opts:['Lodówkę, zmywarkę i mikrofalówkę','Zlew, lodówkę i kuchenkę','Kuchenkę, piekarnik i zmywarkę','Blat, szafki górne i dolne'],ans:1},
+        {q:'Stopień ochrony IP opisuje:',opts:['Moc oprawy','Odporność na wodę i pyły','Temperaturę barwową','Kąt świecenia'],ans:1},
+        {q:'Styl skandynawski charakteryzuje się:',opts:['Złotymi akcentami','Minimalizmem i naturalnymi materiałami','Odsłoniętymi rurami','Postarzanymi meblami'],ans:1},
+        {q:'Płyty gipsowo-kartonowe stosuje się głównie do:',opts:['Posadzek','Ścian działowych i sufitów podwieszanych','Glazury','Malowania'],ans:1},
+        {q:'Natężenie oświetlenia mierzy się w:',opts:['Watach','Kelwinach','Luksach','Lumenach'],ans:2},
+        {q:'Shabby Chic to styl cechujący się:',opts:['Nowoczesnymi liniami','Postarzanymi meblami i pastelami','Ciemnym drewnem','Geometrycznymi wzorami'],ans:1},
+        {q:'Program Dialux służy do:',opts:['Modelowania 3D','Projektowania instalacji elektrycznej','Symulacji oświetlenia','Kosztorysowania'],ans:2},
+        {q:'Armatura łazienkowa to:',opts:['Płytki i fugi','Baterie, krany i prysznice','Wanna i umywalka','Uchwyty i wieszaki'],ans:1},
+        {q:'Mood board służy do:',opts:['Kosztorysowania','Wizualnej prezentacji koncepcji stylistycznej','Rysowania rzutów','Obliczania powierzchni'],ans:1},
+        {q:'Kosztorys w projekcie wnętrza zawiera:',opts:['Tylko ceny mebli','Koszty materiałów, mebli i robocizny','Tylko projekt graficzny','Harmonogram prac'],ans:1},
+        {q:'Jakie oświetlenie stosuje się jako główne źródło światła w pomieszczeniu?',opts:['Dekoracyjne','Ogólne (ambient)','Punktowe (task)','Akcentujące'],ans:1},
+        {q:'Styl Hampton charakteryzuje się:',opts:['Ciemnymi kolorami i surowym betonem','Jasnymi kolorami, naturalnym drewnem i motywami morskimi','Złotymi zdobieniami i luksusem','Minimalistyczną geometrią'],ans:1},
+      ]},
+      { name:'Rysunek techniczny', desc:'Dokumentacja projektowa, zasady rysunku, elementy budowlane', questions:[
+        {q:'Rzut poziomy przedstawia:',opts:['Widok z zewnątrz','Przekrój poziomy budynku','Przekrój pionowy ściany','Widok dachu'],ans:1},
+        {q:'Kład ścienny pokazuje:',opts:['Rzut podłogi','Rozwinięcie ściany z wykończeniem','Schemat elektryczny','Przekrój stropu'],ans:1},
+        {q:'Aksonometria to:',opts:['Rzut poziomy','Przekrój pionowy','Trójwymiarowe przedstawienie w rzucie ukośnym','Widok elewacji'],ans:2},
+        {q:'Linia przerywana oznacza:',opts:['Widoczną krawędź','Ukrytą krawędź','Oś symetrii','Linię wymiarową'],ans:1},
+        {q:'Skala 1:50 oznacza:',opts:['1m = 50cm na rysunku','1cm na rysunku = 50cm w rzeczywistości','50cm na rysunku = 1m','Rysunek powiększony 50x'],ans:1},
+        {q:'Tabelka rysunkowa zawiera:',opts:['Tylko nazwisko projektanta','Nazwę projektu, skalę, datę i numer rysunku','Listę materiałów','Kosztorys'],ans:1},
+        {q:'Strop to element:',opts:['Pionowy','Poziomy oddzielający kondygnacje','Ukośny dachu','Zewnętrzny'],ans:1},
+        {q:'Wymiary podaje się standardowo w:',opts:['Centymetrach','Metrach','Milimetrach','Calach'],ans:2},
+        {q:'Perspektywa dwupunktowa ma:',opts:['Jeden punkt zbiegu','Dwa punkty zbiegu','Brak punktów zbiegu','Trzy punkty zbiegu'],ans:1},
+        {q:'Drzwi na rzucie rysuje się jako:',opts:['Prostokąt z krzyżykiem','Prostokąt z łukiem','Dwie linie','Strzałkę'],ans:1},
+        {q:'Instalacja sanitarna oznaczana jest kolorem:',opts:['Żółtym','Czerwonym','Zielonym','Niebieskim'],ans:3},
+        {q:'Prace przedprojektowe obejmują:',opts:['Wizualizacje 3D','Inwentaryzację i wywiad z klientem','Wniosek o pozwolenie','Wybór mebli'],ans:1},
+        {q:'Schody na rzucie rysuje się jako:',opts:['Linie poziome ze strzałką','Prostokąt z ukośnymi liniami','Zygzak pionowy','Koło z podziałkami'],ans:0},
+        {q:'Format A2 ma wymiary:',opts:['210x297mm','297x420mm','420x594mm','594x841mm'],ans:2},
+        {q:'Przekrój na rysunku technicznym powstaje przez:',opts:['Rzutowanie równoległe','Przecięcie płaszczyzną i pokazanie wnętrza','Widok z góry','Powiększenie szczegółu'],ans:1},
+      ]},
+      { name:'SketchUp i V-Ray', desc:'Modelowanie 3D i fotorealistyczne wizualizacje', questions:[
+        {q:'Skrót Push/Pull w SketchUp to:',opts:['P','Q','E','R'],ans:0},
+        {q:'3D Warehouse służy do:',opts:['Zapisywania w chmurze','Pobierania gotowych modeli 3D','Renderowania','Wymiarowania'],ans:1},
+        {q:'Różnica między Komponentem a Grupą:',opts:['Komponentów nie można edytować','Zmiana komponentu zmienia wszystkie kopie','Grupy zawierają komponenty','Brak różnicy'],ans:1},
+        {q:'Tape Measure służy do:',opts:['Tylko mierzenia','Mierzenia i linii pomocniczych','Rysowania ścian','Skalowania modelu'],ans:1},
+        {q:'Reflection w V-Ray to:',opts:['Kolor podstawowy','Odbicie lustrzane','Przezroczystość','Krycie'],ans:1},
+        {q:'Narzędzie Orbit służy do:',opts:['Przesuwania','Obracania widoku','Powiększania','Zmiany perspektywy'],ans:1},
+        {q:'Parallel Projection to:',opts:['Widok perspektywiczny','Widok równoległy bez perspektywy','Widok z góry','Panorama 360'],ans:1},
+        {q:'V-Ray Interactive pozwala na:',opts:['Rendering końcowy','Podgląd w czasie rzeczywistym','Eksport video','Tylko oświetlenie'],ans:1},
+        {q:'Natywny plik SketchUp ma rozszerzenie:',opts:['.3ds','.obj','.skp','.max'],ans:2},
+        {q:'Follow Me służy do:',opts:['Animacji kamery','Wyciągania profilu wzdłuż ścieżki','Teksturowania','Grupowania'],ans:1},
+        {q:'HDRI w V-Ray to:',opts:['Tekstura mebli','Oświetlenie środowiskowe i tło','Mapa bump','Filtr postprodukcyjny'],ans:1},
+        {q:'Skrót Line w SketchUp to:',opts:['L','M','P','F'],ans:0},
+        {q:'Glossiness=0 w V-Ray to materiał:',opts:['Matowy','Lustrzany','Przezroczysty','Silnie rozmyte refleksy'],ans:3},
+        {q:'Solid Inspector sprawdza:',opts:['Poprawność bryły','Skalę modelu','Listę materiałów','Jakość tekstur'],ans:0},
+        {q:'Warstwy (Tags) służą do:',opts:['Teksturowania','Zarządzania widocznością elementów','Animacji','Eksportu'],ans:1},
+      ]},
+    ]
+  },
+
+  RAP: {
+    name: 'Roczna Akademia Projektowania Wnętrz',
+    nameEn: 'One-Year Interior Design Academy',
+    sections: [
+      { name:'Teoria projektowania wnętrz i AI', desc:'Style, kolor, oświetlenie, Smart Home, Eko-Design, AI', questions:[
+        {q:'Styl eklektyczny polega na:',opts:['Używaniu jednego spójnego stylu','Mieszaniu elementów różnych stylów','Minimalizmie i prostocie','Nawiązaniu do natury'],ans:1},
+        {q:'Wzornik RAL służy do:',opts:['Doboru materiałów podłogowych','Standaryzacji i oznaczania kolorów','Projektowania oświetlenia','Kosztorysowania'],ans:1},
+        {q:'Ciepłe kolory (czerwień, pomarańcz) działają psychologicznie:',opts:['Kojąco i chłodząco','Pobudzająco i ocieplająco','Nie mają wpływu na nastrój','Optycznie powiększają przestrzeń'],ans:1},
+        {q:'Systemy BMS (Building Management System) służą do:',opts:['Projektowania mebli','Zarządzania instalacjami budynku','Tworzenia wizualizacji','Kosztorysowania'],ans:1},
+        {q:'Zero-waste w projektowaniu wnętrz oznacza:',opts:['Brak mebli we wnętrzu','Minimalizowanie odpadów i wybór materiałów z recyklingu','Projektowanie tylko z białych materiałów','Brak ozdób i dekoracji'],ans:1},
+        {q:'SketchUp Diffusion to narzędzie:',opts:['Do modelowania 3D','AI generujące wizualizacje na podstawie modelu 3D','Do renderowania V-Ray','Do zarządzania projektami'],ans:1},
+        {q:'Inteligentne oświetlenie w Smart Home pozwala na:',opts:['Tylko włączanie i wyłączanie','Sterowanie barwą, natężeniem i scenami przez aplikację','Tylko programowanie harmonogramu','Zmianę opraw oświetleniowych'],ans:1},
+        {q:'Materiały ekologiczne w projektowaniu to:',opts:['Wyłącznie materiały z drewna','Materiały o niskim śladzie węglowym, biodegradowalne lub z recyklingu','Materiały w kolorze zielonym','Najtańsze dostępne materiały'],ans:1},
+        {q:'Midjourney i Dall-E to narzędzia AI służące do:',opts:['Modelowania 3D','Generowania obrazów na podstawie opisu tekstowego','Zarządzania projektem','Tworzenia kosztorysów'],ans:1},
+        {q:'Stopień ochrony IP44 oznacza ochronę przed:',opts:['Tylko pyłem','Pyłem i zachlapaniem wodą','Pyłem i zanurzeniem w wodzie','Tylko wodą'],ans:1},
+        {q:'Trello w pracy projektanta służy do:',opts:['Renderowania wizualizacji','Zarządzania zadaniami i projektami','Projektowania oświetlenia','Tworzenia modeli 3D'],ans:1},
+        {q:'Eko-Design w praktyce obejmuje:',opts:['Tylko wybór zielonych kolorów','Projekty uwzględniające efektywność energetyczną i zrównoważone materiały','Wyłącznie meble z drewna','Brak elektrycznych urządzeń'],ans:1},
+        {q:'Smart Home UPS (zasilanie awaryjne) zapewnia:',opts:['Stały dopływ wody','Podtrzymanie zasilania przy braku prądu','Automatyczne ogrzewanie','Zdalne sterowanie oświetleniem'],ans:1},
+        {q:'Tactiq to narzędzie AI pomagające w:',opts:['Generowaniu wizualizacji','Transkrypcji i podsumowaniu spotkań online','Modelowaniu 3D','Zarządzaniu kolorami'],ans:1},
+        {q:'Kolor roku ogłaszany przez Pantone wpływa na:',opts:['Normy budowlane','Trendy w branży wnętrzarskiej i designu','Przepisy pożarowe','Ceny materiałów budowlanych'],ans:1},
+      ]},
+      { name:'Meblarstwo', desc:'Materiały, style, projektowanie i technologia mebli', questions:[
+        {q:'Fornir to:',opts:['Gruba deska drewniana','Cienki plaster drewna naklejany na płyty','Rodzaj farby do drewna','Technika rzeźbienia w drewnie'],ans:1},
+        {q:'Płyta MDF to:',opts:['Medium Density Fiberboard – płyta pilśniowa średniej gęstości','Płyta wiórowa OSB','Sklejka wielowarstwowa','Płyta gipsowo-kartonowa'],ans:0},
+        {q:'Producent płyt meblowych Egger pochodzi z:',opts:['Polski','Niemiec','Austrii','Włoch'],ans:2},
+        {q:'Intarsja to technika:',opts:['Rzeźbienia w drewnie','Wkładania wzorów z różnych materiałów w powierzchnię mebla','Malowania mebli','Tapicerowania mebli'],ans:1},
+        {q:'Zawiasy Blum to:',opts:['Rodzaj blatów kuchennych','Akcesoria meblowe do szafek','Materiały do renowacji mebli','Narzędzia stolarskie'],ans:1},
+        {q:'Styl Bauhaus w meblarstwie charakteryzuje się:',opts:['Bogatymi zdobieniami i ornamentami','Funkcjonalizmem, prostymi formami i nowymi materiałami','Postarzanym wyglądem i pastelami','Złotymi akcentami i luksusem'],ans:1},
+        {q:'Bejca służy do:',opts:['Klejenia elementów drewnianych','Zmiany koloru drewna przy zachowaniu widoczności usłojenia','Szpachlowania ubytków','Polerowania powierzchni'],ans:1},
+        {q:'Upcykling w meblarstwie polega na:',opts:['Utylizacji starych mebli','Przetwarzaniu starych mebli w nowe wartościowe przedmioty','Kupowaniu nowych mebli','Impregnowaniu drewna'],ans:1},
+        {q:'Złoty prostokąt w kompozycji meblarskiej to:',opts:['Standardowy format arkusza rysunkowego','Proporcja matematyczna ~1:1,618 stosowana w projektowaniu','Wymiar standardowej szafki kuchennej','Kolor złoty w wykończeniu mebli'],ans:1},
+        {q:'Prowadnice Blum służą do:',opts:['Montażu blatów','Płynnego wysuwania szuflad','Mocowania zawiasów','Wzmacniania ścianek mebli'],ans:1},
+        {q:'Drewno dębowe cechuje się:',opts:['Miękką strukturą i jasnym kolorem','Twardością, trwałością i wyraźnym usłojeniem','Wyłącznie ciemnobrązowym kolorem','Podatnością na wilgoć'],ans:1},
+        {q:'Technika okleinowania polega na:',opts:['Malowaniu powierzchni mebli','Naklejaniu cienkiej warstwy drewna lub folii na płytę','Szlifowaniu powierzchni','Klejeniu elementów konstrukcyjnych'],ans:1},
+        {q:'Styl mebli biedermeier wywodzi się z:',opts:['Francji XIX w.','Niemiec i Austrii początku XIX w.','Anglii epoki wiktoriańskiej','Skandynawii'],ans:1},
+        {q:'Lakier do drewna różni się od oleju tym, że:',opts:['Lakier jest tańszy','Lakier tworzy twardą powłokę na powierzchni, olej wnika w drewno','Olej jest mniej trwały','Nie ma różnicy w zastosowaniu'],ans:1},
+        {q:'Ergonomia mebli kuchennych zakłada, że standardowa wysokość blatu wynosi:',opts:['75 cm','85-90 cm','95-100 cm','70 cm'],ans:1},
+      ]},
+      { name:'Rysunek techniczny i dokumentacja', desc:'Zasady rysunku, dokumentacja projektowa, elementy budowlane', questions:[
+        {q:'Rzut poziomy (plan) budynku to:',opts:['Widok z zewnątrz','Poziomy przekrój budynku','Przekrój pionowy','Widok dachu'],ans:1},
+        {q:'Kład ścienny w projekcie pokazuje:',opts:['Rzut podłogi','Rozwinięcie ściany z wykończeniem i meblami','Schemat elektryczny','Przekrój stropu'],ans:1},
+        {q:'Linia punktowo-kreskowa (oś) oznacza:',opts:['Ukrytą krawędź','Linię wymiarową','Oś symetrii lub środkową elementu','Krawędź cięcia'],ans:2},
+        {q:'W skali 1:100 odcinek 1cm na rysunku to:',opts:['1cm','10cm','100cm (1m)','10m'],ans:2},
+        {q:'Prace przedprojektowe to:',opts:['Tworzenie wizualizacji','Inwentaryzacja, wywiad z klientem, analiza potrzeb','Składanie wniosków urzędowych','Zakup materiałów'],ans:1},
+        {q:'Okna na rzucie poziomym rysuje się jako:',opts:['Prostokąt z krzyżem','Przerwę w ścianie z dwiema lub trzema liniami','Łuk','Strzałkę'],ans:1},
+        {q:'Umowa o dzieło w projektowaniu wnętrz określa:',opts:['Tylko wynagrodzenie','Zakres projektu, terminy, wynagrodzenie i prawa autorskie','Kosztorys materiałów','Harmonogram prac budowlanych'],ans:1},
+        {q:'Instalacja elektryczna na rysunkach oznaczana jest kolorem:',opts:['Niebieskim','Zielonym','Czerwonym','Żółtym'],ans:2},
+        {q:'Stropy żelbetowe monolityczne to stropy:',opts:['Z prefabrykatów','Wylewane na miejscu budowy w szalunkach','Z drewnianych belek','Ze stalowych profili'],ans:1},
+        {q:'Ściany działowe oddzielają:',opts:['Kondygnacje','Poszczególne pomieszczenia','Budynek od zewnątrz','Fundament od ścian'],ans:1},
+        {q:'Perspektywa jednopunktowa stosowana jest gdy:',opts:['Rysunek wymaga dwóch punktów zbiegu','Jedna ściana jest równoległa do płaszczyzny rysunku','Rysunek jest aksonometryczny','Brakuje linii horyzontu'],ans:1},
+        {q:'Mood board, koncepcja i rzuty to elementy:',opts:['Kosztorysu','Dokumentacji projektowej wnętrza','Umowy z klientem','Inwentaryzacji'],ans:1},
+        {q:'Drzwi balkonowe różnią się od zwykłych drzwi tym, że:',opts:['Mają niższy próg','Sięgają do podłogi lub posiadają przeszklenia do posadzki','Otwierają się tylko na zewnątrz','Są zawsze przesuwne'],ans:1},
+        {q:'Rysunek odręczny w pracy projektanta służy do:',opts:['Zastąpienia programów CAD','Szybkiego szkicowania koncepcji i komunikacji z klientem','Tworzenia finalnej dokumentacji','Kosztorysowania'],ans:1},
+        {q:'Sufit podwieszany stosuje się w celu:',opts:['Tylko dekoracyjnym','Ukrycia instalacji, poprawy akustyki i estetyki','Wyłącznie w łazienkach','Wzmocnienia konstrukcji stropu'],ans:1},
+      ]},
+      { name:'SketchUp i V-Ray', desc:'Modelowanie 3D i fotorealistyczne wizualizacje', questions:[
+        {q:'Zasobnik domyślny w SketchUp to:',opts:['Biblioteka komponentów','Konfigurowalna przestrzeń narzędzi','Panel warstw','Okno renderowania'],ans:1},
+        {q:'Snap (snapowanie) w SketchUp to:',opts:['Funkcja renderowania','Przyciąganie do charakterystycznych punktów','Eksport modelu','Grupowanie elementów'],ans:1},
+        {q:'Narzędzie Scale służy do:',opts:['Tworzenia kopii','Skalowania obiektów','Obrotu elementów','Przesuwania kamery'],ans:1},
+        {q:'Grupy w SketchUp zapobiegają:',opts:['Renderowaniu elementów','Niezamierzonemu łączeniu się geometrii','Eksportowi modelu','Tworzeniu komponentów'],ans:1},
+        {q:'Emissive w V-Ray to:',opts:['Materiał odbijający','Materiał świecący własnym światłem','Materiał przezroczysty','Materiał matowy'],ans:1},
+        {q:'Narzędzie Rotate obraca obiekt względem:',opts:['Środka ekranu','Wybranego punktu i osi','Lewego dolnego rogu','Środka ciężkości'],ans:1},
+        {q:'V-Ray Dome Light symuluje:',opts:['Lampę punktową','Oświetlenie nieba i środowiska','Reflektor','Świecę'],ans:1},
+        {q:'Tekstury zewnętrzne w SketchUp można importować jako:',opts:['Tylko pliki .skp','Pliki graficzne (JPG, PNG, TIFF)','Tylko pliki PDF','Pliki CSV'],ans:1},
+        {q:'Biblioteka 3D Warehouse wymaga:',opts:['Licencji Pro SketchUp','Połączenia z internetem','Dodatkowej wtyczki','Konta V-Ray'],ans:1},
+        {q:'Narzędzie Arc rysuje:',opts:['Prostokąt','Łuk (fragment okręgu)','Wielobok','Spiralę'],ans:1},
+        {q:'Bump map w V-Ray symuluje:',opts:['Odbicie światła','Nierówności powierzchni bez zmiany geometrii','Przezroczystość','Emisję światła'],ans:1},
+        {q:'Narzędzie Eraser (gumka) w SketchUp usuwa:',opts:['Tylko tekstury','Krawędzie i powierzchnie','Tylko grupy','Tylko komponenty'],ans:1},
+        {q:'IES Light w V-Ray to:',opts:['Oświetlenie środowiskowe','Lampa z rzeczywistym rozkładem światła z pliku IES','Oświetlenie słoneczne','Proste światło punktowe'],ans:1},
+        {q:'Eksport z SketchUp do formatu DWG pozwala na:',opts:['Renderowanie w V-Ray','Otwarcie modelu w AutoCAD','Drukowanie 3D','Publikację w sieci'],ans:1},
+        {q:'Narzędzie Weld Extensions w SketchUp służy do:',opts:['Łączenia oddzielnych krawędzi w jedną krzywą','Spajania brył','Teksturowania','Wymiarowania'],ans:0},
+      ]},
+      { name:'AutoCAD – dokumentacja projektowa', desc:'Środowisko pracy, rysowanie 2D, wymiarowanie i dokumentacja', questions:[
+        {q:'AutoCAD to program służący do:',opts:['Renderowania 3D','Tworzenia precyzyjnej dokumentacji technicznej 2D i 3D','Zarządzania projektami','Generowania wizualizacji AI'],ans:1},
+        {q:'Polecenie LINE w AutoCAD rysuje:',opts:['Okrąg','Prostą linię','Łuk','Prostokąt'],ans:1},
+        {q:'Polecenie OFFSET służy do:',opts:['Obrotu obiektu','Tworzenia równoległej kopii w zadanej odległości','Skalowania','Lustrzanego odbicia'],ans:1},
+        {q:'Warstwy (Layers) w AutoCAD służą do:',opts:['Renderowania','Organizacji elementów rysunku i kontroli ich widoczności','Wymiarowania','Eksportu'],ans:1},
+        {q:'Polecenie TRIM służy do:',opts:['Przedłużania linii','Przycinania elementów do krawędzi granicznej','Kopiowania','Przesuwania'],ans:1},
+        {q:'Hatch (kreskowanie) w AutoCAD stosuje się do:',opts:['Wymiarowania','Oznaczania przekrojów i materiałów na rysunkach','Rysowania mebli','Opisywania elementów'],ans:1},
+        {q:'Polecenie MIRROR tworzy:',opts:['Obrót obiektu','Lustrzane odbicie obiektu','Kopię w szyku','Skalowanie proporcjonalne'],ans:1},
+        {q:'Wymiar liniowy (DIMLINEAR) mierzy:',opts:['Kąty','Odległości prostoliniowe','Promienie łuków','Powierzchnie'],ans:1},
+        {q:'Block w AutoCAD to:',opts:['Warstwa rysunku','Zgrupowany zestaw obiektów wielokrotnego użytku','Rodzaj kreskowania','Styl tekstu'],ans:1},
+        {q:'Polecenie EXTEND służy do:',opts:['Przycinania','Przedłużania elementów do wskazanej krawędzi','Kopiowania','Obrotu'],ans:1},
+        {q:'Model Space w AutoCAD to przestrzeń:',opts:['Drukowania','Pracy i rysowania modelu','Zarządzania warstwami','Edycji tekstów'],ans:1},
+        {q:'Paper Space (Layout) służy do:',opts:['Tworzenia modelu','Przygotowania rysunku do wydruku','Renderowania','Importu DXF'],ans:1},
+        {q:'Polecenie ARRAY tworzy:',opts:['Lustrzane odbicie','Szyk prostokątny lub kołowy kopii obiektu','Grupę elementów','Wymiar'],ans:1},
+        {q:'Format DWG to:',opts:['Format PDF','Natywny format pliku AutoCAD','Format obrazu','Format arkusza kalkulacyjnego'],ans:1},
+        {q:'Polecenie FILLET zaokrągla:',opts:['Tekst','Naroża dwóch linii łukiem o zadanym promieniu','Blok','Warstwę'],ans:1},
+      ]},
+    ]
+  },
+
+  PO: {
+    name: 'Projektowanie Ogrodów',
+    nameEn: 'Garden Design Course',
+    sections: [
+      { name:'Teoria projektowania ogrodów', desc:'Style, kompozycja, rośliny, kosztorys i praca z klientem', questions:[
+        {q:'Analiza stanu istniejącego w projektowaniu ogrodu obejmuje:',opts:['Tylko rysowanie planu','Ocenę nasłonecznienia, gleby, ukształtowania terenu i istniejącej roślinności','Wybór roślin','Kosztorysowanie'],ans:1},
+        {q:'Siatka w projektowaniu ogrodu służy do:',opts:['Ogrodzenia ogrodu','Kompozycyjnego porządkowania przestrzeni i układu ścieżek','Podlewania roślin','Zabezpieczenia przed szkodnikami'],ans:1},
+        {q:'Style w projektowaniu ogrodów obejmują m.in.:',opts:['Tylko styl formalny i nieformalny','Styl angielski, francuski, japoński, nowoczesny i rustykalny','Wyłącznie style historyczne','Tylko ogrody warzywne i kwiatowe'],ans:1},
+        {q:'Cechy plastyczne roślin to:',opts:['Wyłącznie kolor kwiatów','Kształt, faktura, barwa liści i kwiatów, wysokość i pokrój','Tylko czas kwitnienia','Wymagania glebowe'],ans:1},
+        {q:'Funkcjonalny podział ogrodu oznacza wydzielenie:',opts:['Tylko strefy relaksu','Stref takich jak: relaks, zabawa, ogrodnictwo, komunikacja','Wyłącznie strefy przydomowej','Tylko strefy widokowej'],ans:1},
+        {q:'Projekt opisowy ogrodu zawiera:',opts:['Tylko listę roślin','Opis koncepcji, dobór roślin, materiałów i rozwiązań technicznych','Wyłącznie kosztorys','Tylko rysunki techniczne'],ans:1},
+        {q:'Solitery w ogrodzie to:',opts:['Rośliny sadzone gęsto w grupach','Pojedyncze, efektowne rośliny stanowiące akcent kompozycji','Rośliny do żywopłotów','Rośliny okrywowe'],ans:1},
+        {q:'Kosztorys ogrodu obejmuje:',opts:['Tylko ceny roślin','Koszty roślin, materiałów nawierzchni, małej architektury i robocizny','Tylko koszty projektu','Wyłącznie ceny materiałów'],ans:1},
+        {q:'Praca z klientem w projektowaniu ogrodu zaczyna się od:',opts:['Zakupu roślin','Wywiadu i analizy potrzeb oraz możliwości budżetowych','Rysowania planu','Wyboru stylu'],ans:1},
+        {q:'Nawierzchnie twarde w ogrodzie to:',opts:['Trawniki i łąki','Tarasy, chodniki, podjazdy z kostki, kamienia lub drewna','Wyłącznie ścieżki żwirowe','Tylko trawy ozdobne'],ans:1},
+        {q:'Rabata to:',opts:['Rodzaj ogrodzenia','Pas obsadzony roślinami ozdobnymi','Typ nawierzchni','Element małej architektury'],ans:1},
+        {q:'Projekt graficzny ogrodu zawiera zazwyczaj:',opts:['Tylko zdjęcia przykładowych ogrodów','Rzut z góry z oznaczeniem roślin, nawierzchni i elementów','Wyłącznie przekroje','Tylko listę materiałów'],ans:1},
+        {q:'Zieleń izolacyjna w ogrodzie służy do:',opts:['Dekoracji','Oddzielenia ogrodu od sąsiedztwa, drogi lub hałasu','Produkcji warzyw','Tworzenia cienia dla tarasu'],ans:1},
+        {q:'Specjalizacja architekta ogrodów różni się od ogrodnika tym, że:',opts:['Architekt tylko sadzi rośliny','Architekt projektuje przestrzeń, ogrodnik ją pielęgnuje','Nie ma różnicy','Ogrodnik tworzy projekty, architekt nadzoruje'],ans:1},
+        {q:'Projekt oświetlenia ogrodu uwzględnia:',opts:['Tylko oświetlenie dekoracyjne','Oświetlenie bezpieczeństwa, komunikacyjne, dekoracyjne i akcentujące rośliny','Wyłącznie latarnie','Tylko oświetlenie wejścia'],ans:1},
+      ]},
+      { name:'Rysunek odręczny i techniczny', desc:'Podstawy rysunku, perspektywy, rzuty ogrodów', questions:[
+        {q:'Rzut poziomy ogrodu pokazuje:',opts:['Widok z boku','Plan ogrodu z góry z rozmieszczeniem elementów','Przekrój przez skarpę','Widok perspektywiczny'],ans:1},
+        {q:'Skala 1:100 oznacza, że 1cm na rysunku to:',opts:['1cm','10cm','100cm (1m)','10m'],ans:2},
+        {q:'Aksonometria ogrodu to:',opts:['Rzut poziomy','Trójwymiarowe przedstawienie w projekcji ukośnej','Przekrój pionowy','Widok frontowy'],ans:1},
+        {q:'Izometria różni się od aksonometrii tym, że:',opts:['Nie ma różnicy','W izometrii wszystkie osie są nachylone pod kątem 30° i mają tę samą skalę','Izometria jest zawsze z góry','Izometria nie pokazuje głębokości'],ans:1},
+        {q:'Kompozycja w rysunku ogrodu opiera się na:',opts:['Przypadkowym rozmieszczeniu elementów','Zasadach równowagi, rytmu, dominanty i proporcji','Wyłącznie symetrii','Tylko asymetrii'],ans:1},
+        {q:'Perspektywa w rysunku ogrodu służy do:',opts:['Tworzenia planów technicznych','Realistycznego pokazania jak ogród będzie wyglądał z poziomu oczu','Mierzenia odległości','Opisywania roślin'],ans:1},
+        {q:'Rzut pionowy (przekrój) ogrodu pokazuje:',opts:['Widok z góry','Ukształtowanie terenu, skarpy, wysokości elementów w przekroju','Oświetlenie ogrodu','Nawodnienie'],ans:1},
+        {q:'Zasady rysunku architektonicznego wymagają:',opts:['Tylko użycia ołówka','Stosowania skal, linii o różnej grubości i opisów','Wyłącznie kolorowania','Rysowania z pamięci'],ans:1},
+        {q:'Oznaczenie roślin na planie ogrodu to zazwyczaj:',opts:['Realistyczny rysunek rośliny','Okrąg lub symbol z opisem i numerem do legendy','Fotografia rośliny','Tylko nazwa łacińska'],ans:1},
+        {q:'Linie cienkie na rysunku technicznym ogrodu to zazwyczaj:',opts:['Kontury główne','Linie pomocnicze, wymiarowe i oznaczenia','Granice działki','Ogrodzenia'],ans:1},
+        {q:'Zestawienie roślin w dokumentacji ogrodu zawiera:',opts:['Tylko nazwy roślin','Nazwę, ilość, rozmiar sadzonki i ewentualnie cenę','Wyłącznie zdjęcia','Tylko wymagania glebowe'],ans:1},
+        {q:'Wymiarowanie na rysunku ogrodu służy do:',opts:['Dekoracji rysunku','Podania rzeczywistych odległości i rozmiarów elementów','Opisania roślin','Oznaczenia nawierzchni'],ans:1},
+        {q:'Przekrój przez skarpę w projekcie ogrodu pokazuje:',opts:['Widok z góry','Spadek terenu i sposób jego umocnienia','Rozmieszczenie roślin','Plan nawadniania'],ans:1},
+        {q:'Arkusz prezentacyjny projektu ogrodu zawiera:',opts:['Tylko plan','Plan, wizualizacje, zestawienie roślin i materiałów oraz opis','Wyłącznie kosztorys','Tylko zdjęcia'],ans:1},
+        {q:'Ogrodzenie na planie ogrodu rysuje się jako:',opts:['Pojedynczą linię','Podwójną linię lub symbol ogrodzenia wzdłuż granicy działki','Prostokąt wypełniony','Linię przerywaną'],ans:1},
+      ]},
+      { name:'Vectorworks – projektowanie ogrodu', desc:'Środowisko pracy, modelowanie 2D/3D, wizualizacje', questions:[
+        {q:'Vectorworks to program dedykowany m.in.:',opts:['Wyłącznie do projektowania wnętrz','Projektowaniu ogrodów, architektury krajobrazu i architektury','Tylko do renderowania','Wyłącznie do rysunków technicznych 2D'],ans:1},
+        {q:'Menedżer zasobów w Vectorworks służy do:',opts:['Zarządzania warstwami','Dostępu do bibliotek obiektów, materiałów i symboli','Renderowania','Wymiarowania'],ans:1},
+        {q:'Narzędzie Roślina w Vectorworks pozwala na:',opts:['Tylko rysowanie symboli roślin','Wstawianie roślin z biblioteki z automatycznym zestawieniem','Wyłącznie modelowanie 3D roślin','Podlewanie roślin w modelu'],ans:1},
+        {q:'Klasy w Vectorworks pełnią funkcję podobną do:',opts:['Warstw w Photoshop','Warstw (Layers) w AutoCAD – organizacja elementów','Grup w SketchUp','Bloków w AutoCAD'],ans:1},
+        {q:'Modelowanie terenu w Vectorworks umożliwia:',opts:['Tylko płaskie powierzchnie','Tworzenie skarp, wzniesień i obniżeń terenu','Wyłącznie model bryłowy budynku','Tylko płytki ogrodowe'],ans:1},
+        {q:'Renderworks w Vectorworks to:',opts:['Program do kosztorysowania','Silnik renderujący do tworzenia fotorealistycznych wizualizacji','Biblioteka roślin','Narzędzie do wymiarowania'],ans:1},
+        {q:'Ekstruzja w modelowaniu 3D Vectorworks to:',opts:['Nakładanie tekstur','Wyciąganie profilu 2D w trzeci wymiar','Obracanie obiektu','Skalowanie bryły'],ans:1},
+        {q:'Warstwy projektowe w Vectorworks służą do:',opts:['Zmiany koloru elementów','Organizacji projektu na etapy np. istniejący i projektowany stan','Renderowania','Eksportu PDF'],ans:1},
+        {q:'Ogrodzenie w Vectorworks można stworzyć za pomocą:',opts:['Wyłącznie rysowania ręcznego','Dedykowanego narzędzia ogrodzenie lub przez modelowanie 3D','Tylko importu z biblioteki','Wyłącznie przez hatch'],ans:1},
+        {q:'Arkusz prezentacji (Sheet Layer) w Vectorworks służy do:',opts:['Modelowania 3D','Przygotowania i wydruku dokumentacji projektowej','Renderowania','Zarządzania biblioteką roślin'],ans:1},
+        {q:'Import rysunku zagospodarowania terenu do Vectorworks pozwala na:',opts:['Automatyczne stworzenie ogrodu','Użycie istniejącego planu jako podkładu do projektowania','Wyłącznie eksport','Renderowanie terenu'],ans:1},
+        {q:'Fur w Renderworks symuluje:',opts:['Wodę w stawie','Trawę i inne włókniste powierzchnie','Chmury w tle','Odbicia w szybie'],ans:1},
+        {q:'Zestawienie powierzchni utwardzonych w Vectorworks generuje:',opts:['Listę roślin','Automatyczny raport powierzchni nawierzchni z projektu','Kosztorys robocizny','Harmonogram prac'],ans:1},
+        {q:'Głębia ostrości (DOF) w wizualizacji ogrodu:',opts:['Rozjaśnia cały obraz','Rozmywa dalsze lub bliższe plany dla efektu fotograficznego','Usuwa cienie','Poprawia kolory'],ans:1},
+        {q:'Narzędzie Scalowanie obiektów 2D w Vectorworks pozwala na:',opts:['Tylko powiększanie','Proporcjonalne lub nieproporcjonalne zmiana wielkości obiektów','Wyłącznie zmniejszanie','Obracanie obiektów'],ans:1},
+      ]},
+    ]
+  }
+};
+
+let selectedCourse = null;
+let currentSection = 0;
+let answers = {};
+let uczestnik = '', email = '';
+
+function selectCourse(code) {
+  selectedCourse = code;
+  document.querySelectorAll('.course-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+function startTest() {
+  if (!selectedCourse) { alert('Wybierz kurs.'); return; }
+  uczestnik = document.getElementById('uczestnikImie').value.trim();
+  email = document.getElementById('uczestnikEmail').value.trim();
+  if (!uczestnik) { alert('Podaj imię i nazwisko.'); return; }
+  if (!email || !email.includes('@')) { alert('Podaj poprawny e-mail.'); return; }
+  document.getElementById('selectScreen').style.display = 'none';
+  document.getElementById('headerProgress').style.display = 'flex';
+  document.getElementById('headerTitle').textContent = 'Test — ' + COURSES[selectedCourse].name;
+  answers = {};
+  renderSection(0);
+  document.getElementById('quizScreen').style.display = 'block';
+}
+
+function renderSection(secIdx) {
+  currentSection = secIdx;
+  const course = COURSES[selectedCourse];
+  const sec = course.sections[secIdx];
+  const total = course.sections.length;
+  const quiz = document.getElementById('quizScreen');
+
+  let html = `<div class="section-header">
+    <div class="section-label">Część ${secIdx+1} z ${total}</div>
+    <div class="section-name">${sec.name}</div>
+    <div class="section-desc">${sec.desc}</div>
+  </div>`;
+
+  sec.questions.forEach((q, qi) => {
+    const qid = `s${secIdx}q${qi}`;
+    const sel = answers[qid] !== undefined ? answers[qid] : -1;
+    html += `<div class="question-block${sel!==-1?' answered':''}" id="block_${qid}">
+      <div class="question-num">Pytanie ${qi+1} z ${sec.questions.length}</div>
+      <div class="question-text">${q.q}</div>
+      <div class="options">`;
+    q.opts.forEach((opt, oi) => {
+      html += `<label class="option${sel===oi?' selected':''}" onclick="selectAnswer('${qid}',${oi},this)">
+        <input type="radio" name="${qid}" value="${oi}" ${sel===oi?'checked':''}>
+        <div class="option-dot"></div>
+        <div class="option-text">${opt}</div>
+      </label>`;
+    });
+    html += `</div></div>`;
+  });
+
+  const isLast = secIdx === course.sections.length - 1;
+  html += `<div class="nav-bar">
+    ${secIdx > 0 ? `<button class="btn-nav btn-prev" onclick="renderSection(${secIdx-1})">← Poprzednia część</button>` : '<div></div>'}
+    <button class="btn-nav btn-next" onclick="${isLast ? 'showResults()' : `renderSection(${secIdx+1})`}">
+      ${isLast ? 'Zakończ i sprawdź wynik →' : 'Następna część →'}
+    </button>
+  </div>`;
+
+  quiz.innerHTML = html;
+  updateProgress();
+  window.scrollTo(0,0);
+}
+
+function selectAnswer(qid, oi, el) {
+  answers[qid] = oi;
+  const block = document.getElementById('block_'+qid);
+  block.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  block.classList.add('answered');
+  updateProgress();
+}
+
+function updateProgress() {
+  const course = COURSES[selectedCourse];
+  const total = course.sections.reduce((a,s) => a+s.questions.length, 0);
+  const answered = Object.keys(answers).length;
+  document.getElementById('progressFill').style.width = (answered/total*100)+'%';
+  document.getElementById('progressText').textContent = answered+' / '+total;
+}
+
+async function saveToSupabase(data) {
+  try {
+    await fetch(SUPABASE_URL+'/rest/v1/wyniki_testow', {
+      method:'POST',
+      headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+      body: JSON.stringify(data)
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function showResults() {
+  document.getElementById('quizScreen').style.display = 'none';
+  const resultsDiv = document.getElementById('resultsScreen');
+  resultsDiv.style.display = 'block';
+  resultsDiv.innerHTML = '<div class="saving-msg">Zapisywanie wyników...</div>';
+
+  const course = COURSES[selectedCourse];
+  let totalCorrect = 0, totalQ = 0;
+  let secResults = [];
+
+  course.sections.forEach((sec, si) => {
+    let correct = 0;
+    sec.questions.forEach((q, qi) => { if (answers[`s${si}q${qi}`] === q.ans) correct++; });
+    const pct = Math.round(correct/sec.questions.length*100);
+    secResults.push({ name: sec.name, correct, total: sec.questions.length, pct, pass: pct >= 60 });
+    totalCorrect += correct;
+    totalQ += sec.questions.length;
+  });
+
+  const totalPct = Math.round(totalCorrect/totalQ*100);
+  const allPass = secResults.every(s => s.pass);
+
+  const saveData = {
+    email, imie_nazwisko: uczestnik,
+    kurs: course.name+' / '+course.nameEn,
+    wynik_ogolny: totalPct,
+    wynik_status: allPass ? 'pozytywny' : 'negatywny',
+    sekcja_1_procent: secResults[0]?.pct || null,
+    sekcja_2_procent: secResults[1]?.pct || null,
+    sekcja_3_procent: secResults[2]?.pct || null,
+    sekcja_1_status: secResults[0]?.pass ? 'pozytywny' : 'negatywny',
+    sekcja_2_status: secResults[1]?.pass ? 'pozytywny' : 'negatywny',
+    sekcja_3_status: secResults[2]?.pass ? 'pozytywny' : 'negatywny',
+    liczba_pytan: totalQ,
+    poprawne_odpowiedzi: totalCorrect
+  };
+
+  if (secResults[3]) { saveData.sekcja_4_procent = secResults[3].pct; saveData.sekcja_4_status = secResults[3].pass ? 'pozytywny' : 'negatywny'; }
+  if (secResults[4]) { saveData.sekcja_5_procent = secResults[4].pct; saveData.sekcja_5_status = secResults[4].pass ? 'pozytywny' : 'negatywny'; }
+
+  await saveToSupabase(saveData);
+
+  const dateStr = new Date().toLocaleDateString('pl-PL');
+  let secCards = secResults.map((s,i) => `
+    <div class="rsc">
+      <div class="section-num" style="width:28px;height:28px;border-radius:50%;background:var(--wine);color:white;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+      <div class="rsc-label">${s.name}</div>
+      <div class="rsc-bar-wrap"><div class="rsc-bar ${s.pass?'pass':'fail'}" style="width:${s.pct}%"></div></div>
+      <div class="rsc-pct ${s.pass?'pass':'fail'}">${s.pct}%</div>
+    </div>`).join('');
+
+  resultsDiv.innerHTML = `
+    <div class="result-hero">
+      <div class="result-ring ${allPass?'pass':'fail'}">
+        <div class="result-pct ${allPass?'pass':'fail'}">${totalPct}%</div>
+        <div class="result-status ${allPass?'pass':'fail'}">${allPass?'ZALICZONY':'NIEZALICZONY'}</div>
+      </div>
+      <h2 class="result-title">${allPass ? 'Gratulacje!' : 'Wynik negatywny'}</h2>
+      <p class="result-sub">${allPass
+        ? 'Uzyskałeś/aś wynik pozytywny we wszystkich częściach. Wynik został zapisany w systemie ON-ARCH.'
+        : 'Nie uzyskałeś/aś minimum 60% w jednej lub więcej częściach. Skontaktuj się z organizatorem szkolenia.'}</p>
+    </div>
+    <div class="result-sections">${secCards}</div>
+    <div class="result-meta">
+      <div class="meta-row"><span class="meta-label">Uczestnik</span><span class="meta-value">${uczestnik}</span></div>
+      <div class="meta-row"><span class="meta-label">E-mail</span><span class="meta-value">${email}</span></div>
+      <div class="meta-row"><span class="meta-label">Kurs</span><span class="meta-value">${course.name}</span></div>
+      <div class="meta-row"><span class="meta-label">Data testu</span><span class="meta-value">${dateStr}</span></div>
+      <div class="meta-row"><span class="meta-label">Poprawne odpowiedzi</span><span class="meta-value">${totalCorrect} / ${totalQ}</span></div>
+      <div class="meta-row"><span class="meta-label">Wynik ogólny</span><span class="meta-value">${totalPct}%</span></div>
+      <div class="meta-row"><span class="meta-label">Wynik</span><span class="meta-value" style="color:${allPass?'var(--success)':'var(--error)'};font-weight:600">${allPass?'POZYTYWNY':'NEGATYWNY'}</span></div>
+    </div>
+    <button class="btn-print" onclick="window.print()">Drukuj / Zapisz jako PDF</button>
+  `;
+  window.scrollTo(0,0);
+  document.getElementById('headerProgress').style.display = 'none';
+}
+</script>
+</body>
+</html>
