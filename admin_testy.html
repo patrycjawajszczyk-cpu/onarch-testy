@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wyniki testów | ON-ARCH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ee;
+    --white: #ffffff;
+    --text: #1a1a1a;
+    --muted: #888;
+    --border: #e0d8d0;
+    --wine: #8B3A3A;
+    --wine-dark: #6b2c2c;
+    --wine-light: #f5eaea;
+    --success: #2e7d32;
+    --error: #c62828;
+    --dark-header: #1f1e1b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Jost',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  /* LOGIN */
+  .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-card { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:48px; width:100%; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.07); }
+  .login-logo { margin-bottom:32px; }
+  .login-logo img { height:28px; }
+  .login-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:6px; }
+  .login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+  .form-label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; display:block; }
+  .form-input { width:100%; padding:12px 16px; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; outline:none; transition:border-color .2s; margin-bottom:20px; }
+  .form-input:focus { border-color:var(--wine); }
+  .btn-login { width:100%; padding:14px; background:var(--wine); color:white; border:none; border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:background .2s; }
+  .btn-login:hover { background:var(--wine-dark); }
+  .login-error { color:var(--error); font-size:13px; margin-top:12px; display:none; }
+
+  /* ADMIN */
+  .admin-screen { display:none; }
+
+  .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 40px; display:flex; align-items:center; height:60px; }
+  .topbar-logo img { height:24px; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:20px; }
+  .topbar-user { font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .btn-logout { padding:8px 18px; border:1.5px solid var(--border); border-radius:6px; background:white; font-family:'Jost',sans-serif; font-size:12px; cursor:pointer; transition:all .2s; }
+  .btn-logout:hover { border-color:var(--wine); color:var(--wine); }
+
+  .nav-tabs { background:var(--white); border-bottom:1px solid var(--border); padding:0 40px; display:flex; gap:32px; }
+  .nav-tab { padding:16px 0; font-size:13px; font-weight:500; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+  .nav-tab.active { color:var(--wine); border-bottom-color:var(--wine); }
+
+  .main { padding:40px; max-width:1400px; margin:0 auto; }
+
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }
+  .page-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:600; }
+  .btn-group { display:flex; gap:12px; }
+  .btn-pdf { display:flex; align-items:center; gap:8px; padding:10px 20px; background:var(--wine); color:white; border:none; border-radius:8px; font-family:'Jost',sans-serif; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:.5px; text-transform:uppercase; }
+  .btn-csv { display:flex; align-items:center; gap:8px; padding:10px 20px; background:white; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:13px; font-weight:500; cursor:pointer; }
+  .btn-csv:hover { border-color:var(--wine); color:var(--wine); }
+
+  /* STATS */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; }
+  .stat-num { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:600; line-height:1; margin-bottom:6px; }
+  .stat-num.wine { color:var(--wine); }
+  .stat-num.green { color:var(--success); }
+  .stat-num.red { color:var(--error); }
+  .stat-num.gold { color:#b8860b; }
+  .stat-label { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
+  /* FILTERS */
+  .filters { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:24px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:16px; align-items:end; }
+  .filter-group label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px; }
+  .filter-input { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; outline:none; background:white; }
+  .filter-input:focus { border-color:var(--wine); }
+  .btn-reset { padding:10px 20px; border:1.5px solid var(--border); border-radius:8px; background:white; font-family:'Jost',sans-serif; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .btn-reset:hover { border-color:var(--wine); color:var(--wine); }
+
+  /* TABLE */
+  .table-wrap { background:var(--white); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .table-count { padding:16px 24px; font-size:13px; color:var(--muted); border-bottom:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:var(--dark-header); }
+  thead th { padding:14px 16px; text-align:left; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#ccc; white-space:nowrap; }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .15s; cursor:pointer; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:#faf8f5; }
+  tbody td { padding:16px; font-size:14px; vertical-align:top; }
+  .td-name { font-weight:600; }
+  .td-email { font-size:12px; color:var(--muted); margin-top:2px; }
+  .td-kurs { font-size:13px; color:var(--muted); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+  .badge-pass { background:#e8f5e9; color:var(--success); }
+  .badge-fail { background:#fce4ec; color:var(--error); }
+  .score { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; }
+  .score.pass { color:var(--success); }
+  .score.fail { color:var(--error); }
+  .sec-scores { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .sec-pill { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:500; }
+  .sec-pill.pass { background:#e8f5e9; color:var(--success); }
+  .sec-pill.fail { background:#fce4ec; color:var(--error); }
+  .empty { text-align:center; padding:60px; color:var(--muted); font-size:14px; }
+
+  /* DETAIL MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:16px; padding:40px; max-width:680px; width:90%; max-height:90vh; overflow-y:auto; position:relative; }
+  .modal-close { position:absolute; top:20px; right:20px; width:32px; height:32px; border:none; background:var(--bg); border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .modal-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:4px; }
+  .modal-sub { font-size:13px; color:var(--muted); margin-bottom:24px; }
+  .modal-section { margin-bottom:20px; }
+  .modal-section-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .modal-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .modal-row:last-child { border-bottom:none; }
+  .modal-row-label { color:var(--muted); }
+  .modal-row-val { font-weight:500; }
+  .sec-detail { background:var(--bg); border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+  .sec-detail-name { flex:1; font-size:13px; font-weight:500; }
+  .sec-detail-bar-wrap { width:100px; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .sec-detail-bar { height:100%; border-radius:3px; }
+  .sec-detail-bar.pass { background:var(--success); }
+  .sec-detail-bar.fail { background:var(--error); }
+  .sec-detail-pct { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; min-width:44px; text-align:right; }
+  .sec-detail-pct.pass { color:var(--success); }
+  .sec-detail-pct.fail { color:var(--error); }
+  .btn-print-modal { width:100%; padding:13px; background:var(--wine); color:white; border:none; border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; font-weight:500; cursor:pointer; margin-top:20px; }
+
+  .loading { text-align:center; padding:60px; color:var(--muted); font-size:14px; }
+
+  @media print {
+    .topbar,.nav-tabs,.filters,.btn-group,.btn-print-modal,.modal-close { display:none!important; }
+    .modal { box-shadow:none; border-radius:0; max-height:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:#8B3A3A;">ON-ARCH</span>
+    </div>
+    <h1 class="login-title">Panel wyników testów</h1>
+    <p class="login-sub">Zaloguj się aby zobaczyć wyniki walidacji</p>
+    <label class="form-label">Hasło administratora</label>
+    <input type="password" class="form-input" id="passwordInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-login" onclick="login()">Zaloguj się</button>
+    <div class="login-error" id="loginError">Nieprawidłowe hasło</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin-screen" id="adminScreen">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:#8B3A3A;">ON-ARCH</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-user">Administrator</div>
+      <button class="btn-logout" onclick="logout()">← Wyloguj</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active">Wyniki testów walidacyjnych</div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <h1 class="page-title">Wyniki testów walidacyjnych</h1>
+      <div class="btn-group">
+        <button class="btn-pdf" onclick="printPage()">&#128196; GENERUJ PDF</button>
+        <button class="btn-csv" onclick="exportCSV()">&#8595; CSV</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-num wine" id="statTotal">—</div><div class="stat-label">Testów łącznie</div></div>
+      <div class="stat-card"><div class="stat-num green" id="statPass">—</div><div class="stat-label">Wynik pozytywny</div></div>
+      <div class="stat-card"><div class="stat-num red" id="statFail">—</div><div class="stat-label">Wynik negatywny</div></div>
+      <div class="stat-card"><div class="stat-num gold" id="statAvg">—</div><div class="stat-label">Średni wynik</div></div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Kurs</label>
+        <select class="filter-input" id="filterKurs" onchange="applyFilters()">
+          <option value="">Wszystkie kursy</option>
+          <option value="PW">Projektowanie Wnętrz (PW)</option>
+          <option value="RAP">Roczna Akademia (RAP)</option>
+          <option value="PO">Projektowanie Ogrodów (PO)</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Kursant (imię, nazwisko lub e-mail)</label>
+        <input type="text" class="filter-input" id="filterKursant" placeholder="np. Anna Kowalska" oninput="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <label>Wynik</label>
+        <select class="filter-input" id="filterWynik" onchange="applyFilters()">
+          <option value="">Wszystkie</option>
+          <option value="pozytywny">Pozytywny</option>
+          <option value="negatywny">Negatywny</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">Resetuj filtry</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-count" id="tableCount">Ładowanie...</div>
+      <div id="tableContainer"><div class="loading">Pobieranie danych...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bksebyxrknubyokwuaby.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc2VieXhya251Ynlva3d1YWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4OTg0ODMsImV4cCI6MjA4ODQ3NDQ4M30.H_Su4c61dVmoQKP_NiIs-X7pGsFtc06eRqpxG19flAo';
+const PASSWORD = 'onarch2026';
+
+let allData = [];
+let filteredData = [];
+
+function login() {
+  const pwd = document.getElementById('passwordInput').value;
+  if (pwd === PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminScreen').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('passwordInput').value = '';
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/wyniki_testow?select=*&order=data_testu.desc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    allData = await res.json();
+    filteredData = [...allData];
+    updateStats(filteredData);
+    renderTable(filteredData);
+  } catch(e) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty">Błąd połączenia z bazą danych.</div>';
+  }
+}
+
+function updateStats(data) {
+  const pass = data.filter(r => r.wynik_status === 'pozytywny').length;
+  const fail = data.filter(r => r.wynik_status === 'negatywny').length;
+  const avg = data.length ? Math.round(data.reduce((a,r) => a + r.wynik_ogolny, 0) / data.length) : 0;
+  document.getElementById('statTotal').textContent = data.length;
+  document.getElementById('statPass').textContent = pass;
+  document.getElementById('statFail').textContent = fail;
+  document.getElementById('statAvg').textContent = avg + '%';
+}
+
+function applyFilters() {
+  const kurs = document.getElementById('filterKurs').value;
+  const kursant = document.getElementById('filterKursant').value.toLowerCase();
+  const wynik = document.getElementById('filterWynik').value;
+  filteredData = allData.filter(r => {
+    if (kurs && !r.kurs.includes(kurs)) return false;
+    if (kursant && !r.imie_nazwisko.toLowerCase().includes(kursant) && !r.email.toLowerCase().includes(kursant)) return false;
+    if (wynik && r.wynik_status !== wynik) return false;
+    return true;
+  });
+  updateStats(filteredData);
+  renderTable(filteredData);
+}
+
+function resetFilters() {
+  document.getElementById('filterKurs').value = '';
+  document.getElementById('filterKursant').value = '';
+  document.getElementById('filterWynik').value = '';
+  filteredData = [...allData];
+  updateStats(filteredData);
+  renderTable(filteredData);
+}
+
+function renderTable(data) {
+  document.getElementById('tableCount').textContent = `Wyświetlono ${data.length} wyników`;
+  if (!data.length) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty">Brak wyników spełniających kryteria filtrowania.</div>';
+    return;
+  }
+
+  const sectionNames = {
+    PW: ['Teoria','Rysunek','SketchUp/V-Ray'],
+    RAP: ['Teoria+AI','Meblarstwo','Rysunek','SketchUp','AutoCAD'],
+    PO: ['Teoria','Rysunek','Vectorworks']
+  };
+
+  let html = `<table>
+    <thead><tr>
+      <th>Kursant</th>
+      <th>Kurs</th>
+      <th>Data testu</th>
+      <th>Wynik ogólny</th>
+      <th>Części</th>
+      <th>Status</th>
+    </tr></thead><tbody>`;
+
+  data.forEach((r, i) => {
+    const date = new Date(r.data_testu).toLocaleDateString('pl-PL');
+    const pass = r.wynik_status === 'pozytywny';
+    const courseCode = r.kurs.includes('RAP') ? 'RAP' : r.kurs.includes('Ogrodów') ? 'PO' : 'PW';
+    const names = sectionNames[courseCode] || ['S1','S2','S3'];
+
+    const pills = [1,2,3,4,5].map(n => {
+      const pct = r[`sekcja_${n}_procent`];
+      const st = r[`sekcja_${n}_status`];
+      if (pct === null || pct === undefined) return '';
+      return `<span class="sec-pill ${st==='pozytywny'?'pass':'fail'}">${names[n-1]||'S'+n}: ${pct}%</span>`;
+    }).join('');
+
+    html += `<tr onclick="showDetail(${i})">
+      <td><div class="td-name">${r.imie_nazwisko}</div><div class="td-email">${r.email}</div></td>
+      <td><div class="td-kurs">${r.kurs.split('/')[0].trim()}</div></td>
+      <td>${date}</td>
+      <td><div class="score ${pass?'pass':'fail'}">${r.wynik_ogolny}%</div></td>
+      <td><div class="sec-scores">${pills}</div></td>
+      <td><span class="badge ${pass?'badge-pass':'badge-fail'}">${pass?'POZYTYWNY':'NEGATYWNY'}</span></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+function showDetail(idx) {
+  const r = filteredData[idx];
+  const pass = r.wynik_status === 'pozytywny';
+  const date = new Date(r.data_testu).toLocaleDateString('pl-PL');
+  const time = new Date(r.data_testu).toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'});
+  const courseCode = r.kurs.includes('RAP') ? 'RAP' : r.kurs.includes('Ogrodów') ? 'PO' : 'PW';
+  const sectionNames = {
+    PW: ['Teoria projektowania wnętrz','Rysunek techniczny','SketchUp i V-Ray'],
+    RAP: ['Teoria i AI','Meblarstwo','Rysunek techniczny','SketchUp i V-Ray','AutoCAD'],
+    PO: ['Teoria projektowania ogrodów','Rysunek odręczny i techniczny','Vectorworks']
+  };
+  const names = sectionNames[courseCode] || [];
+
+  let sekcjeHtml = '';
+  [1,2,3,4,5].forEach(n => {
+    const pct = r[`sekcja_${n}_procent`];
+    const st = r[`sekcja_${n}_status`];
+    if (pct === null || pct === undefined) return;
+    const sp = st === 'pozytywny';
+    sekcjeHtml += `<div class="sec-detail">
+      <div class="sec-detail-name">${names[n-1]||'Sekcja '+n}</div>
+      <div class="sec-detail-bar-wrap"><div class="sec-detail-bar ${sp?'pass':'fail'}" style="width:${pct}%"></div></div>
+      <div class="sec-detail-pct ${sp?'pass':'fail'}">${pct}%</div>
+    </div>`;
+  });
+
+  document.getElementById('modalContent').innerHTML = `
+    <button class="modal-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">✕</button>
+    <h2 class="modal-title">${r.imie_nazwisko}</h2>
+    <p class="modal-sub">${r.email}</p>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Dane testu</div>
+      <div class="modal-row"><span class="modal-row-label">Kurs</span><span class="modal-row-val">${r.kurs.split('/')[0].trim()}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Data i godzina</span><span class="modal-row-val">${date}, ${time}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Liczba pytań</span><span class="modal-row-val">${r.liczba_pytan}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Poprawne odpowiedzi</span><span class="modal-row-val">${r.poprawne_odpowiedzi} / ${r.liczba_pytan}</span></div>
+      <div class="modal-row"><span class="modal-row-label">Wynik ogólny</span><span class="modal-row-val" style="font-family:'Cormorant Garamond',serif;font-size:22px;color:${pass?'var(--success)':'var(--error)'}">${r.wynik_ogolny}%</span></div>
+      <div class="modal-row"><span class="modal-row-label">Status</span><span class="modal-row-val"><span class="badge ${pass?'badge-pass':'badge-fail'}">${pass?'POZYTYWNY':'NEGATYWNY'}</span></span></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Wyniki poszczególnych części</div>
+      ${sekcjeHtml}
+    </div>
+
+    <button class="btn-print-modal" onclick="window.print()">Drukuj / Zapisz jako PDF</button>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+function exportCSV() {
+  const headers = ['Imię i nazwisko','E-mail','Kurs','Data testu','Wynik ogólny (%)','Status','S1 (%)','S2 (%)','S3 (%)','S4 (%)','S5 (%)','Pytań','Poprawnych'];
+  const rows = filteredData.map(r => [
+    r.imie_nazwisko, r.email, r.kurs.split('/')[0].trim(),
+    new Date(r.data_testu).toLocaleDateString('pl-PL'),
+    r.wynik_ogolny, r.wynik_status,
+    r.sekcja_1_procent||'', r.sekcja_2_procent||'', r.sekcja_3_procent||'',
+    r.sekcja_4_procent||'', r.sekcja_5_procent||'',
+    r.liczba_pytan, r.poprawne_odpowiedzi
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'wyniki_testow_onarch.csv'; a.click();
+}
+
+function printPage() {
+  window.print();
+}
+</script>
+</body>
+</html>
