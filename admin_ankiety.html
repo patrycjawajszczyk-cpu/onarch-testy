@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ankiety wstępne | ON-ARCH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f2ee; --white:#fff; --text:#1a1a1a; --muted:#888;
+    --border:#e0d8d0; --wine:#8B3A3A; --wine-dark:#6b2c2c; --wine-light:#f5eaea;
+    --dark-header:#1f1e1b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Jost',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-card { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:48px; width:100%; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.07); }
+  .login-logo { margin-bottom:32px; }
+  .login-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:6px; }
+  .login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+  .form-label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; display:block; }
+  .form-input { width:100%; padding:12px 16px; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; outline:none; transition:border-color .2s; margin-bottom:20px; }
+  .form-input:focus { border-color:var(--wine); }
+  .btn-login { width:100%; padding:14px; background:var(--wine); color:white; border:none; border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
+  .btn-login:hover { background:var(--wine-dark); }
+  .login-error { color:#c62828; font-size:13px; margin-top:12px; display:none; }
+
+  .admin-screen { display:none; }
+  .topbar { background:var(--white); border-bottom:1px solid var(--border); padding:0 40px; display:flex; align-items:center; height:60px; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:20px; }
+  .topbar-user { font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .btn-logout { padding:8px 18px; border:1.5px solid var(--border); border-radius:6px; background:white; font-family:'Jost',sans-serif; font-size:12px; cursor:pointer; }
+  .btn-logout:hover { border-color:var(--wine); color:var(--wine); }
+
+  .main { padding:40px; max-width:1400px; margin:0 auto; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }
+  .page-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:600; }
+  .btn-group { display:flex; gap:12px; }
+  .btn-csv { display:flex; align-items:center; gap:8px; padding:10px 20px; background:white; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:13px; cursor:pointer; }
+  .btn-csv:hover { border-color:var(--wine); color:var(--wine); }
+
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; }
+  .stat-num { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:600; line-height:1; margin-bottom:6px; }
+  .stat-num.wine { color:var(--wine); }
+  .stat-num.blue { color:#1565c0; }
+  .stat-num.green { color:#2e7d32; }
+  .stat-num.gold { color:#b8860b; }
+  .stat-label { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
+  .filters { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:24px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:16px; align-items:end; }
+  .filter-group label { font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px; }
+  .filter-input { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; outline:none; background:white; }
+  .btn-reset { padding:10px 20px; border:1.5px solid var(--border); border-radius:8px; background:white; font-family:'Jost',sans-serif; font-size:13px; cursor:pointer; }
+  .btn-reset:hover { border-color:var(--wine); color:var(--wine); }
+
+  .table-wrap { background:var(--white); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .table-count { padding:16px 24px; font-size:13px; color:var(--muted); border-bottom:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:var(--dark-header); }
+  thead th { padding:14px 16px; text-align:left; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#ccc; white-space:nowrap; }
+  tbody tr { border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:#faf8f5; }
+  tbody td { padding:14px 16px; font-size:14px; vertical-align:top; }
+  .td-name { font-weight:600; }
+  .td-email { font-size:12px; color:var(--muted); margin-top:2px; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; background:var(--wine-light); color:var(--wine); }
+  .level-bar { display:flex; gap:3px; align-items:center; }
+  .level-dot { width:10px; height:10px; border-radius:50%; background:var(--border); }
+  .level-dot.filled { background:var(--wine); }
+  .empty { text-align:center; padding:60px; color:var(--muted); font-size:14px; }
+  .loading { text-align:center; padding:60px; color:var(--muted); }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:flex-start; justify-content:center; overflow-y:auto; padding:40px 20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:16px; padding:40px; max-width:760px; width:100%; position:relative; margin:auto; }
+  .modal-close { position:absolute; top:20px; right:20px; width:32px; height:32px; border:none; background:var(--bg); border-radius:50%; cursor:pointer; font-size:16px; }
+  .modal-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:4px; }
+  .modal-sub { font-size:13px; color:var(--muted); margin-bottom:28px; }
+  .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+  .modal-section { margin-bottom:24px; }
+  .modal-section-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .modal-row { display:flex; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .modal-row:last-child { border-bottom:none; }
+  .modal-row-label { color:var(--muted); min-width:180px; flex-shrink:0; }
+  .modal-row-val { font-weight:500; flex:1; }
+  .modal-text-box { background:var(--bg); border-radius:8px; padding:14px 16px; font-size:14px; line-height:1.6; color:var(--text); margin-top:4px; }
+  .btn-print-modal { width:100%; padding:13px; background:var(--wine); color:white; border:none; border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; cursor:pointer; margin-top:20px; }
+
+  @media print {
+    .topbar,.filters,.btn-group,.btn-print-modal,.modal-close { display:none!important; }
+    .modal { box-shadow:none; border-radius:0; }
+    body { background:white; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:#8B3A3A;">ON-ARCH</span>
+    </div>
+    <h1 class="login-title">Panel ankiet wstępnych</h1>
+    <p class="login-sub">Zaloguj się aby przeglądać odpowiedzi uczestników</p>
+    <label class="form-label">Hasło administratora</label>
+    <input type="password" class="form-input" id="passwordInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-login" onclick="login()">Zaloguj się</button>
+    <div class="login-error" id="loginError">Nieprawidłowe hasło</div>
+  </div>
+</div>
+
+<div class="admin-screen" id="adminScreen">
+  <div class="topbar">
+    <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:#8B3A3A;">ON-ARCH</span>
+    <div class="topbar-right">
+      <div class="topbar-user">Administrator</div>
+      <button class="btn-logout" onclick="logout()">← Wyloguj</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <h1 class="page-title">Ankiety wstępne uczestników</h1>
+      <div class="btn-group">
+        <button class="btn-csv" onclick="exportCSV()">↓ CSV</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num wine" id="statTotal">—</div><div class="stat-label">Ankiet łącznie</div></div>
+      <div class="stat-card"><div class="stat-num blue" id="statBeginner">—</div><div class="stat-label">Brak doświadczenia</div></div>
+      <div class="stat-card"><div class="stat-num green" id="statExperienced">—</div><div class="stat-label">Z doświadczeniem</div></div>
+      <div class="stat-card"><div class="stat-num gold" id="statAvgPC">—</div><div class="stat-label">Śr. poziom komputera</div></div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Kurs</label>
+        <select class="filter-input" id="filterKurs" onchange="applyFilters()">
+          <option value="">Wszystkie kursy</option>
+          <option value="PW">Projektowanie Wnętrz (PW)</option>
+          <option value="RAP">Roczna Akademia (RAP)</option>
+          <option value="PO">Projektowanie Ogrodów (PO)</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Uczestnik</label>
+        <input type="text" class="filter-input" id="filterKursant" placeholder="Imię, nazwisko lub e-mail" oninput="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <label>Doświadczenie</label>
+        <select class="filter-input" id="filterDosw" onchange="applyFilters()">
+          <option value="">Wszyscy</option>
+          <option value="nie">Brak doświadczenia</option>
+          <option value="tak">Z doświadczeniem</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">Resetuj</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-count" id="tableCount">Ładowanie...</div>
+      <div id="tableContainer"><div class="loading">Pobieranie danych...</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bksebyxrknubyokwuaby.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc2VieXhya251Ynlva3d1YWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4OTg0ODMsImV4cCI6MjA4ODQ3NDQ4M30.H_Su4c61dVmoQKP_NiIs-X7pGsFtc06eRqpxG19flAo';
+const PASSWORD = 'onarch2026';
+
+let allData = [], filteredData = [];
+
+function login() {
+  if (document.getElementById('passwordInput').value === PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminScreen').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('passwordInput').value = '';
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/ankiety_wstepne?select=*&order=data_wypelnienia.desc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    allData = await res.json();
+    filteredData = [...allData];
+    updateStats(filteredData);
+    renderTable(filteredData);
+  } catch(e) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty">Błąd połączenia z bazą danych.</div>';
+  }
+}
+
+function updateStats(data) {
+  const beginner = data.filter(r => r.czy_projektowal === 'nie').length;
+  const experienced = data.filter(r => r.czy_projektowal && r.czy_projektowal !== 'nie').length;
+  const levels = data.filter(r => r.poziom_komputera).map(r => r.poziom_komputera);
+  const avg = levels.length ? (levels.reduce((a,b) => a+b, 0) / levels.length).toFixed(1) : '—';
+  document.getElementById('statTotal').textContent = data.length;
+  document.getElementById('statBeginner').textContent = beginner;
+  document.getElementById('statExperienced').textContent = experienced;
+  document.getElementById('statAvgPC').textContent = avg + (avg !== '—' ? '/5' : '');
+}
+
+function applyFilters() {
+  const kurs = document.getElementById('filterKurs').value;
+  const kursant = document.getElementById('filterKursant').value.toLowerCase();
+  const dosw = document.getElementById('filterDosw').value;
+  filteredData = allData.filter(r => {
+    if (kurs && !(r.kurs||'').includes(kurs)) return false;
+    if (kursant && !(r.imie_nazwisko||'').toLowerCase().includes(kursant) && !(r.email||'').toLowerCase().includes(kursant)) return false;
+    if (dosw === 'nie' && r.czy_projektowal !== 'nie') return false;
+    if (dosw === 'tak' && (!r.czy_projektowal || r.czy_projektowal === 'nie')) return false;
+    return true;
+  });
+  updateStats(filteredData);
+  renderTable(filteredData);
+}
+
+function resetFilters() {
+  document.getElementById('filterKurs').value = '';
+  document.getElementById('filterKursant').value = '';
+  document.getElementById('filterDosw').value = '';
+  filteredData = [...allData];
+  updateStats(filteredData);
+  renderTable(filteredData);
+}
+
+function levelDots(val) {
+  if (!val) return '—';
+  let html = '<div class="level-bar">';
+  for (let i = 1; i <= 5; i++) html += `<div class="level-dot${i<=val?' filled':''}"></div>`;
+  html += `</div>`;
+  return html;
+}
+
+function renderTable(data) {
+  document.getElementById('tableCount').textContent = `Wyświetlono ${data.length} ankiet`;
+  if (!data.length) {
+    document.getElementById('tableContainer').innerHTML = '<div class="empty">Brak ankiet spełniających kryteria.</div>';
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>Uczestnik</th>
+    <th>Kurs</th>
+    <th>Data</th>
+    <th>Zawód</th>
+    <th>Doświadczenie</th>
+    <th>Poziom PC</th>
+    <th>Zna SketchUp</th>
+    <th>Korzysta z AI</th>
+  </tr></thead><tbody>`;
+
+  const dosw = { tak_zawodowo:'Zawodowe', tak_hobbystycznie:'Hobbystyczne', troche:'Własne mieszkanie', nie:'Brak' };
+
+  data.forEach((r, i) => {
+    const date = new Date(r.data_wypelnienia).toLocaleDateString('pl-PL');
+    html += `<tr onclick="showDetail(${i})">
+      <td><div class="td-name">${r.imie_nazwisko||'—'}</div><div class="td-email">${r.email||''}</div></td>
+      <td>${r.kurs ? `<span class="pill">${r.kurs.split('(')[1]?.replace(')','') || r.kurs}</span>` : '—'}</td>
+      <td>${date}</td>
+      <td style="font-size:13px">${r.zawod||'—'}</td>
+      <td style="font-size:13px">${dosw[r.czy_projektowal]||'—'}</td>
+      <td>${levelDots(r.poziom_komputera)}</td>
+      <td style="font-size:13px">${r.zna_sketchup||'—'}</td>
+      <td style="font-size:13px">${r.korzysta_z_ai||'—'}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+function showDetail(idx) {
+  const r = filteredData[idx];
+  const date = new Date(r.data_wypelnienia).toLocaleDateString('pl-PL');
+
+  const row = (label, val) => val ? `<div class="modal-row"><span class="modal-row-label">${label}</span><span class="modal-row-val">${val}</span></div>` : '';
+  const textBox = (label, val) => val ? `<div class="modal-section"><div class="modal-section-title">${label}</div><div class="modal-text-box">${val}</div></div>` : '';
+
+  document.getElementById('modalContent').innerHTML = `
+    <button class="modal-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">✕</button>
+    <h2 class="modal-title">${r.imie_nazwisko}</h2>
+    <p class="modal-sub">${r.email} · ${date}</p>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Dane podstawowe</div>
+      ${row('Kurs', r.kurs)}
+      ${row('Zawód', r.zawod)}
+      ${row('Data wypełnienia', date)}
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Doświadczenie i wykształcenie</div>
+      ${row('Wykształcenie pokrewne', r.wyksztalcenie_powiazan)}
+      ${row('Jakie wykształcenie', r.wyksztalcenie_opis)}
+      ${row('Doświadczenie w projektowaniu', r.czy_projektowal)}
+      ${row('Opis doświadczenia', r.projektowanie_opis)}
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Komputer i programy</div>
+      ${row('Poziom obsługi komputera', r.poziom_komputera ? r.poziom_komputera + '/5' : null)}
+      ${row('Używane programy', r.programy_uzywane)}
+      ${row('Rysunek techniczny', r.zna_rysunek_techniczny)}
+      ${row('Zakres rysunku', r.rysunek_zakres)}
+      ${row('SketchUp', r.zna_sketchup)}
+      ${row('AutoCAD', r.zna_autocad)}
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">AI i technologie</div>
+      ${row('Korzysta z AI', r.korzysta_z_ai)}
+      ${row('Narzędzia AI', r.ai_narzedzia)}
+      ${row('Znajomość Smart Home', r.zna_smart_home)}
+      ${row('AI w projektowaniu — oczekiwania', r.ai_w_projektowaniu)}
+    </div>
+
+    ${textBox('Interesujące tematy', r.interesujace_tematy)}
+    ${textBox('Oczekiwania od kursu', r.oczekiwania)}
+    ${textBox('Dodatkowe uwagi', r.dodatkowe_uwagi)}
+
+    <button class="btn-print-modal" onclick="window.print()">Drukuj / Zapisz jako PDF</button>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+function exportCSV() {
+  const headers = ['Imię i nazwisko','E-mail','Kurs','Data','Zawód','Wykształcenie','Doświadczenie','Poziom PC','Programy','Rysunek','SketchUp','AutoCAD','AI','Narzędzia AI','Smart Home','Tematy','Oczekiwania'];
+  const rows = filteredData.map(r => [
+    r.imie_nazwisko, r.email, r.kurs,
+    new Date(r.data_wypelnienia).toLocaleDateString('pl-PL'),
+    r.zawod, r.wyksztalcenie_powiazan, r.czy_projektowal,
+    r.poziom_komputera, r.programy_uzywane, r.zna_rysunek_techniczny,
+    r.zna_sketchup, r.zna_autocad, r.korzysta_z_ai, r.ai_narzedzia,
+    r.zna_smart_home, r.interesujace_tematy, r.oczekiwania
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ankiety_onarch.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
